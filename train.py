@@ -20,6 +20,7 @@ from trainer import BaseTrainer
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', type=str, default='ravdess', help='class of dataset.')
 parser.add_argument('--model', type=str, default='squeezenet1_0', help='class of network.')
+parser.add_argument('--input_type', type=str, default='scm', help='type of input features')
 args = parser.parse_args()
 
 def main():
@@ -34,9 +35,9 @@ def main():
             batch_size=1, shuffle=False, num_workers=1)  
     elif args.dataset == 'ravdess':
         from config import ravdess_train_config as config
-        train_data_loader = DataLoader(ravdessLoader(test_folder=[11, 12, 23, 24]), 
+        train_data_loader = DataLoader(ravdessLoader(test_folder=[11, 12, 23, 24], input_type=args.input_type), 
             batch_size=config.batch_size, shuffle=True, num_workers=0)
-        val_data_loader = DataLoader(ravdessLoader(test_folder=[11, 12, 23, 24], is_train=False), 
+        val_data_loader = DataLoader(ravdessLoader(test_folder=[11, 12, 23, 24], input_type=args.input_type, is_train=False), 
             batch_size=1, shuffle=False, num_workers=0)  
     else:
         raise ValueError("Unsupport dataset {version}: "
