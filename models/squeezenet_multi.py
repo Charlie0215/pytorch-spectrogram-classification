@@ -1,6 +1,7 @@
 from torch import nn
 import torch
 from torchvision.models.utils import load_state_dict_from_url
+import torch.nn.functional as F
 
 model_urls = {
     'squeezenet1_0': 'https://download.pytorch.org/models/squeezenet1_0-a815701f.pth',
@@ -15,6 +16,7 @@ class MakeDense(nn.Module):
 
     def forward(self, x):
         out = F.relu(self.conv(x))
+        
         out = self.norm_layer(out)
         out = torch.cat((x, out), 1)
         return out
@@ -43,23 +45,27 @@ class Fire(nn.Module):
         ], dim=1)
 
 class SqueezeNet(nn.Module):
-    def __init__(self, num_classes=8, num_dense_layer=3, num_input=3):
+    def __init__(self, num_classes=8, num_dense_layer=3, num_input=3, growth_rate=16):
         super().__init__()
         self.num_classes = num_classes
         self.num_input = num_input
         if self.num_input == 3:
-            modules= []
+            modules_1 = []
+            modules_2 = []
+            modules_3 = []
             _in_channels = 1
             for i in range(num_dense_layer):
-                modules.append(MakeDense(_in_channels, growth_rate=32))
+                modules_1.append(MakeDense(_in_channels, growth_rate=32))
+                modules_2.append(MakeDense(_in_channels, growth_rate=32))
+                modules_3.append(MakeDense(_in_channels, growth_rate=32))
                 _in_channels += growth_rate
-            self.head_spt = nn.Sequential(*modules)
-            self.head_chr = nn.Sequential(*modules)
-            self.head_mfc = nn.Sequential(*modules)
+            self.head_spt = nn.Sequential(*modules_1)
+            self.head_chr = nn.Sequential(*modules_2)
+            self.head_mfc = nn.Sequential(*modules_3)
             self.features = nn.Sequential(
                 nn.ReLU(inplace=True),
                 nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
-                Fire(99, 16, 64, 64),
+                Fire(291, 16, 64, 64),
                 Fire(128, 16, 64, 64),
                 Fire(128, 32, 128, 128),
                 nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
@@ -71,22 +77,34 @@ class SqueezeNet(nn.Module):
                 Fire(512, 64, 256, 256),
             )
         elif self.num_input == 7:
-            modules= []
+            modules_1 = []
+            modules_2 = []
+            modules_3 = []
+            modules_4 = []
+            modules_5 = []
+            modules_6 = []
+            modules_7 = []
             _in_channels = 1
             for i in range(num_dense_layer):
-                modules.append(MakeDense(_in_channels, growth_rate=12))
+                modules_1.append(MakeDense(_in_channels, growth_rate=growth_rate))
+                modules_2.append(MakeDense(_in_channels, growth_rate=16))
+                modules_3.append(MakeDense(_in_channels, growth_rate=16))
+                modules_4.append(MakeDense(_in_channels, growth_rate=16))
+                modules_5.append(MakeDense(_in_channels, growth_rate=16))
+                modules_6.append(MakeDense(_in_channels, growth_rate=16))
+                modules_7.append(MakeDense(_in_channels, growth_rate=16))
                 _in_channels += growth_rate
-            self.head_spt = nn.Sequential(*modules)
-            self.head_chr = nn.Sequential(*modules)
-            self.head_cqt = nn.Sequential(*modules)
-            self.head_cens = nn.Sequential(*modules)
-            self.head_mfc = nn.Sequential(*modules)
-            self.head_mfc1d = nn.Sequential(*modules)
-            self.head_mfc2d = nn.Sequential(*modules)
+            self.head_spt = nn.Sequential(*modules_1)
+            self.head_chr = nn.Sequential(*modules_2)
+            self.head_cqt = nn.Sequential(*modules_3)
+            self.head_cens = nn.Sequential(*modules_4)
+            self.head_mfc = nn.Sequential(*modules_5)
+            self.head_mfc1d = nn.Sequential(*modules_6)
+            self.head_mfc2d = nn.Sequential(*modules_7)
             self.features = nn.Sequential(
                 nn.ReLU(inplace=True),
                 nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
-                Fire(91, 16, 64, 64),
+                Fire(343, 16, 64, 64),
                 Fire(128, 16, 64, 64),
                 Fire(128, 32, 128, 128),
                 nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
@@ -141,18 +159,18 @@ class SqueezeNet(nn.Module):
         elif self.num_input == 7:
             x[0] = self.head_spt(x[0])
             x[1] = self.head_chr(x[1])
-            x[2] = self.head_cqt(x[1])
-            x[3] = self.head_cens(x[1])
+            x[2] = self.head_cqt(x[2])
+            x[3] = self.head_cens(x[3])
             x[4] = self.head_mfc(x[4])
-            x[5] = self.head_mfc(x[5])
-            x[6] = self.head_mfc(x[6])
+            x[5] = self.head_mfc1d(x[5])
+            x[6] = self.head_mfc2d(x[6])
             x = torch.cat((x[0], x[1], x[2], x[3], x[4], x[5], x[6]), 1)
         x = self.features(x)
         x = self.classifier(x)
         return torch.flatten(x, 1)
 
-def _squeezenet(version, pretrained, progress, **kwargs):
-    model = SqueezeNet(version, **kwargs)
+def _squeezenet(pretrained, progress, num_input, growth_rate, **kwargs):
+    model = SqueezeNet(num_input=num_input, growth_rate=growth_rate, **kwargs)
     if pretrained:
         arch = 'squeezenet' + version
         state_dict = load_state_dict_from_url(model_urls[arch],
@@ -161,23 +179,5 @@ def _squeezenet(version, pretrained, progress, **kwargs):
         
     return model
 
-def squeezenet1_0(pretrained=False, progress=True, **kwargs):
-    r"""SqueezeNet model architecture from the `"SqueezeNet: AlexNet-level
-    accuracy with 50x fewer parameters and <0.5MB model size"
-    <https://arxiv.org/abs/1602.07360>`_ paper.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _squeezenet('1_0', pretrained, progress, **kwargs)
-
-def squeezenet1_1(pretrained=False, progress=True, **kwargs):
-    r"""SqueezeNet 1.1 model from the `official SqueezeNet repo
-    <https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1>`_.
-    SqueezeNet 1.1 has 2.4x less computation and slightly fewer parameters
-    than SqueezeNet 1.0, without sacrificing accuracy.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _squeezenet('1_1', pretrained, progress, **kwargs)
+def squeezenet_multi(pretrained=False, progress=True, num_input=3, growth_rate=16, **kwargs):
+    return _squeezenet(pretrained, progress, num_input, growth_rate, **kwargs)

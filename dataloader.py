@@ -99,7 +99,8 @@ class ravdessLoader(data.Dataset):
             mfcc_path='./data/2d_feature/mfcc', 
             dmfcc_path='./data/2d_feature/dmfcc', 
             ddmfcc_path='./data/2d_feature/ddmfcc', 
-            ):
+            mutilhead=True,
+        ):
         '''
         :test_folder:
             testing folder ID. Default is [12, 24]
@@ -122,6 +123,7 @@ class ravdessLoader(data.Dataset):
             spectrogram path.
         
         '''
+        self.is_multihead = mutilhead
         self.spc_path = spec_path
         self.chr_path = chr_path
         self.cqt_path = cqt_path
@@ -201,8 +203,8 @@ class ravdessLoader(data.Dataset):
             dmfcc_path = os.path.join(self.dmfcc_path, self.path_list[index])
             ddmfcc_path = os.path.join(self.ddmfcc_path, self.path_list[index])
             path_list = [spc_path, chr_path, cqt_path, cens_path, mfcc_path, dmfcc_path, ddmfcc_path]
-
             features = [Image.open(x) for x in path_list]
+
             if self.is_train:
                 p = random.randint(0,3)
                 if p == 0:
@@ -215,11 +217,15 @@ class ravdessLoader(data.Dataset):
                     features = [self.transform(x) for x in features]
             else:
                 features = [self.transform(x) for x in features]
-            img = torch.cat(
-                (
-                    features[0], features[1], features[2], features[3], 
-                    features[4], features[5], features[6]
-                ), dim=0)
+
+            if not self.is_multihead:
+                img = torch.cat(
+                    (
+                        features[0], features[1], features[2], features[3], 
+                        features[4], features[5], features[6]
+                    ), dim=0)
+            else:
+                img = features
 
         if self.input_type == 'scm':
             spc_path = os.path.join(self.spc_path, self.path_list[index])
@@ -240,10 +246,12 @@ class ravdessLoader(data.Dataset):
                     features = [self.transform(x) for x in features]
             else:
                 features = [self.transform(x) for x in features]
-
-            img = torch.cat(
-                (
-                    features[0], features[1], features[2]
-                ), dim=0)
+            if not self.is_multihead:
+                img = torch.cat(
+                    (
+                        features[0], features[1], features[2]
+                    ), dim=0)
+            else:
+                img = features
 
         return img, label

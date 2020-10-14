@@ -15,12 +15,12 @@ import pandas as pd
 from tqdm import tqdm
 import librosa
 import cv2
-from trainer import BaseTrainer
+from trainer import BaseTrainer, multiheadTrainer
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', type=str, default='ravdess', help='class of dataset.')
 parser.add_argument('--model', type=str, default='squeezenet1_0', help='class of network.')
-parser.add_argument('--input_type', type=str, default='scm', help='type of input features')
+parser.add_argument('--input_type', type=str, default='all', help='type of input features')
 args = parser.parse_args()
 
 def main():
@@ -51,11 +51,17 @@ def main():
         from models import mobilenet_v2 as network
         net = network(in_channels=1, num_classes=8)
     elif args.model == 'squeezenet1_0':
-        from models import squeezenet1_0 as network
-        net = network(pretrained=False)
-    elif args.model == 'squeezenet1_1':
-        from models import squeezenet1_0 as network
-        net = network(pretrained=False)
+        if args.input_type == 'spectrogram':
+            from models import squeezenet1_0 as network
+            net = network(pretrained=False)
+        elif args.input_type == 'scm':
+            from models import squeezenet_multi as network
+            net = network(num_input=3, growth_rate=32)
+        elif args.input_type == 'all':
+            from models import squeezenet_multi as network
+            net = network(num_input=7, growth_rate=16)
+        else:
+            raise NotImplementedError
     else:
         raise NotImplementedError
     #------------------------------------------------------------------------#
@@ -73,7 +79,8 @@ def main():
     pytorch_total_params = sum(p.numel() for p in net.parameters() if p.requires_grad)
     print('Total parameters: {}'.format(pytorch_total_params))
     loss = nn.CrossEntropyLoss().to(device)
-    Trainer = BaseTrainer(net, optimizer, scheduler, loss, train_data_loader, val_data_loader, True, config)
+    # Trainer = BaseTrainer(net, optimizer, scheduler, loss, train_data_loader, val_data_loader, True, config)
+    Trainer = multiheadTrainer(net, optimizer, scheduler, loss, train_data_loader, val_data_loader, True, config)
     Trainer.run(config.epoch)
 
 
