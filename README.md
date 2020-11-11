@@ -6,7 +6,7 @@ UrbanSound8k:
 2. 
 ```
 cd ./utils
-python utils.py
+python utils.py -dataset ravdess
 ```
 
 ### How to reproduce

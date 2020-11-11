@@ -140,7 +140,7 @@ class multiheadTrainer(object):
                 self.optimizer, self.iterations, self.config.epoch, len(self.train_dataloader), self.config.lr
             )
             self.iterations += 1
-            if batch_id % 10 == 0:
+            if batch_id % 100 == 0:
                 print(
                     'iter: {} | epoch: {}/{} | loss: {:.4f} | best loss/epoch: {}/{}'.format(
                         batch_id, epoch, self.config.epoch, loss.item(), 
