@@ -1,4 +1,5 @@
 import torch
+
 # torch.multiprocessing.set_start_method('spawn')
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,77 +16,208 @@ import pandas as pd
 from tqdm import tqdm
 import librosa
 import cv2
-from trainer import BaseTrainer, multiheadTrainer
+from trainer import BaseTrainer, multiheadTrainer, singleInputTrainer
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', type=str, default='ravdess', help='class of dataset.')
-parser.add_argument('--model', type=str, default='squeezenet1_0', help='class of network.')
-parser.add_argument('--input_type', type=str, default='scm', help='type of input features')
+parser.add_argument(
+    "--dataset",
+    type=str,
+    default="ravdess",
+    help="Class of dataset. We have urbansound and ravdess as the options.",
+)
+parser.add_argument(
+    "--model",
+    type=str,
+    default="squeezenet1_0",
+    help="Use mobilenet or squeezenet1_0 as the network.",
+)
+parser.add_argument(
+    "--input_type",
+    type=str,
+    default="spectrogram",
+    help="Type of input features. We have spectrogram, mfcc, chromagram as 1-channel inputs. scm as a 3-channel input. All as a 7-channel input",
+)
 args = parser.parse_args()
 
+
 def main():
-    #--------------------------------------------------------------------------#
-    # Configure dataloader.
-    #--------------------------------------------------------------------------#
-    if args.dataset == 'urbansound':
+    # --------------------------------------------------------------------------#
+    # Configure dataloader, input method, and model type.
+    # --------------------------------------------------------------------------#
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if args.dataset == "urbansound":
         from config import urbansound_train_config as config
-        train_data_loader = DataLoader(urbanSoundLoader(test_folder=config.test_folder), 
-            batch_size=config.batch_size, shuffle=True, num_workers=1)
-        val_data_loader = DataLoader(urbanSoundLoader(test_folder=config.test_folder, is_train=False), 
-            batch_size=1, shuffle=False, num_workers=1)  
-    elif args.dataset == 'ravdess':
-        from config import ravdess_train_config as config
-        train_data_loader = DataLoader(ravdessLoader(test_folder=config.test_folder, input_type=args.input_type), 
-            batch_size=config.batch_size, shuffle=True, num_workers=4)
-        val_data_loader = DataLoader(ravdessLoader(test_folder=config.test_folder, input_type=args.input_type, is_train=False), 
-            batch_size=1, shuffle=False, num_workers=1)  
-        print('Training Dataset Length: ', len(train_data_loader))
-        print('Validation Dataset Length: ', len(val_data_loader))
-    else:
-        raise ValueError("Unsupport dataset {version}: "
-                        "urbansound, "
-                        "ravdess"
-                        " expected".format(version=args.dataset))
-    #--------------------------------------------------------------------------#
-    # Configure model. 
-    #--------------------------------------------------------------------------#
-    if args.model == 'mobilenet':
-        from models import mobilenet_v2 as network
-        net = network(in_channels=1, num_classes=8)
-    elif args.model == 'squeezenet1_0':
-        if args.input_type == 'spectrogram' or \
-            args.input_type == 'chromagram' or \
-            args.input_type == 'mfcc':
-            from models import squeezenet1_0 as network
-            net = network(pretrained=False, num_input=1)
-        elif args.input_type == 'scm':
-            from models import squeezenet1_0 as network
-            net = network(num_input=3, growth_rate=32, num_dense_layer=8)
-        elif args.input_type == 'all':
-            from models import squeezenet1_0 as network
-            net = network(num_input=7, growth_rate=32, num_dense_layer=8)
+
+        train_data_loader = DataLoader(
+            urbanSoundLoader(test_folder=config.test_folder),
+            batch_size=config.batch_size,
+            shuffle=True,
+            num_workers=1,
+        )
+        val_data_loader = DataLoader(
+            urbanSoundLoader(test_folder=config.test_folder, is_train=False),
+            batch_size=1,
+            shuffle=False,
+            num_workers=1,
+        )
+
+        if args.model == "mobilenet":
+            from models import mobilenet_v2 as network
+
+            net = network(in_channels=1, num_classes=10)
+            optimizer = torch.optim.Adam(
+                net.parameters(), lr=config.lr, betas=(0.9, 0.999)
+            )
+            scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.95)
+            loss = nn.CrossEntropyLoss().to(device)
+            Trainer = singleInputTrainer(
+                net,
+                optimizer,
+                scheduler,
+                loss,
+                train_data_loader,
+                val_data_loader,
+                True,
+                config,
+            )
         else:
-            raise NotImplementedError
+            raise NotImplementedError(
+                "{} is not implemented for urbansound dataset".format(args.model)
+            )
+
+    elif args.dataset == "ravdess":
+        from config import ravdess_train_config as config
+
+        train_data_loader = DataLoader(
+            ravdessLoader(test_folder=config.test_folder, input_type=args.input_type),
+            batch_size=config.batch_size,
+            shuffle=True,
+            num_workers=4,
+        )
+        val_data_loader = DataLoader(
+            ravdessLoader(
+                test_folder=config.test_folder,
+                input_type=args.input_type,
+                is_train=False,
+            ),
+            batch_size=1,
+            shuffle=False,
+            num_workers=1,
+        )
+        print("Training Dataset Length: ", len(train_data_loader))
+        print("Validation Dataset Length: ", len(val_data_loader))
+
+        if args.model == "mobilenet":
+            from models import mobilenet_v2 as network
+
+            net = network(in_channels=1, num_classes=8)
+            optimizer = torch.optim.Adam(
+                net.parameters(), lr=config.lr, betas=(0.9, 0.999)
+            )
+            scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.95)
+            loss = nn.CrossEntropyLoss().to(device)
+            Trainer = singleInputTrainer(
+                net,
+                optimizer,
+                scheduler,
+                loss,
+                train_data_loader,
+                val_data_loader,
+                True,
+                config,
+            )
+
+        elif args.model == "squeezenet1_0":
+            if (
+                args.input_type == "spectrogram"
+                or args.input_type == "chromagram"
+                or args.input_type == "mfcc"
+            ):
+                from models import squeezenet1_0 as network
+
+                net = network(pretrained=False, num_input=1)
+                optimizer = torch.optim.Adam(
+                    net.parameters(), lr=config.lr, betas=(0.9, 0.999)
+                )
+                scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.95)
+                loss = nn.CrossEntropyLoss().to(device)
+                Trainer = singleInputTrainer(
+                    net,
+                    optimizer,
+                    scheduler,
+                    loss,
+                    train_data_loader,
+                    val_data_loader,
+                    True,
+                    config,
+                )
+
+            elif args.input_type == "scm":
+                from models import squeezenet1_0 as network
+
+                net = network(num_input=3, growth_rate=32, num_dense_layer=8)
+                optimizer = torch.optim.Adam(
+                    net.parameters(), lr=config.lr, betas=(0.9, 0.999)
+                )
+                scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.95)
+                loss = nn.CrossEntropyLoss().to(device)
+                Trainer = multiheadTrainer(
+                    net,
+                    optimizer,
+                    scheduler,
+                    loss,
+                    train_data_loader,
+                    val_data_loader,
+                    True,
+                    config,
+                )
+
+            elif args.input_type == "all":
+                from models import squeezenet1_0 as network
+
+                net = network(num_input=7, growth_rate=32, num_dense_layer=8)
+                optimizer = torch.optim.Adam(
+                    net.parameters(), lr=config.lr, betas=(0.9, 0.999)
+                )
+                scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.95)
+                loss = nn.CrossEntropyLoss().to(device)
+                Trainer = multiheadTrainer(
+                    net,
+                    optimizer,
+                    scheduler,
+                    loss,
+                    train_data_loader,
+                    val_data_loader,
+                    True,
+                    config,
+                )
+
+            else:
+                raise NotImplementedError(
+                    "{} is not a valid input method".format(args.input_type)
+                )
+        else:
+            raise NotImplementedError(
+                "{} is not implemented for ravdess dataset".format(args.model)
+            )
     else:
-        raise NotImplementedError
-    #------------------------------------------------------------------------#
-    # Configure model, optimizer, schedular, loss, and trainer.
-    #------------------------------------------------------------------------#
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        raise ValueError(
+            "Unsupport dataset {version}: "
+            "urbansound, "
+            "ravdess"
+            " expected".format(version=args.dataset)
+        )
+
     net = net.to(device)
     if config.pretrain == True:
-        net.load_state_dict(torch.load('./weight/best_scm_weight.pkl')['model_state'])
-        print('weight loaded.')
+        net.load_state_dict(torch.load("./weight/best_scm_weight.pkl")["model_state"])
+        print("weight loaded.")
     else:
-        print('initial training')
-    optimizer = torch.optim.Adam(net.parameters(), lr=config.lr, betas=(0.9, 0.999))
-    scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.95)
+        print("initial training")
     pytorch_total_params = sum(p.numel() for p in net.parameters() if p.requires_grad)
-    print('Total parameters: {}'.format(pytorch_total_params))
-    loss = nn.CrossEntropyLoss().to(device)
-    Trainer = multiheadTrainer(net, optimizer, scheduler, loss, train_data_loader, val_data_loader, True, config)
+    print("Total parameters: {}".format(pytorch_total_params))
     Trainer.run(config.epoch)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
