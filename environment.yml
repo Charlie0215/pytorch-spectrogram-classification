@@ -1,13 +1,21 @@
 name: pytorch1.3
 channels:
+  - anaconda
   - pytorch
   - conda-forge
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
   - appdirs=1.4.3=py_1
+  - argon2-cffi=20.1.0=py37h8f50634_1
+  - async_generator=1.10=py_0
+  - attrs=20.2.0=pyh9f0ad1d_0
   - audioread=2.1.8=py37hc8dfbb8_2
+  - backcall=0.2.0=pyh9f0ad1d_0
+  - backports=1.0=py_2
+  - backports.functools_lru_cache=1.6.1=py_0
   - blas=1.0=mkl
+  - bleach=3.2.0=pyh9f0ad1d_0
   - brotlipy=0.7.0=py37h8f50634_1000
   - bzip2=1.0.8=h516909a_3
   - ca-certificates=2020.6.20=hecda079_0
@@ -23,6 +31,8 @@ dependencies:
   - dask-core=2.25.0=py_0
   - dbus=1.13.16=hb2f20db_0
   - decorator=4.4.2=py_0
+  - defusedxml=0.6.0=py_0
+  - entrypoints=0.3=py37hc8dfbb8_1001
   - expat=2.2.9=he6710b0_2
   - ffmpeg=4.0=hcdf2ecd_0
   - fontconfig=2.13.0=h9420a91_0
@@ -40,10 +50,20 @@ dependencies:
   - icu=58.2=he6710b0_3
   - idna=2.10=pyh9f0ad1d_0
   - imageio=2.9.0=py_0
+  - importlib-metadata=1.7.0=py37hc8dfbb8_0
+  - importlib_metadata=1.7.0=0
   - intel-openmp=2020.2=254
+  - ipykernel=5.3.4=py37h43977f1_0
+  - ipython=7.18.1=py37hc6149b9_0
+  - ipython_genutils=0.2.0=py_1
   - jasper=2.0.14=h07fcdf6_1
+  - jinja2=2.11.2=pyh9f0ad1d_0
   - joblib=0.16.0=py_0
   - jpeg=9b=h024ee3a_2
+  - jsonschema=3.2.0=py37hc8dfbb8_1
+  - jupyter_client=6.1.7=py_0
+  - jupyter_core=4.6.3=py37hc8dfbb8_1
+  - jupyterlab_pygments=0.1.1=pyh9f0ad1d_0
   - kiwisolver=1.2.0=py37hfd86e86_0
   - lame=3.100=h14c3975_1001
   - lcms2=2.11=h396b838_0
@@ -63,6 +83,7 @@ dependencies:
   - libpng=1.6.37=hbc83047_0
   - librosa=0.8.0=pyh9f0ad1d_0
   - libsndfile=1.0.29=he1b5a44_0
+  - libsodium=1.0.18=h516909a_0
   - libstdcxx-ng=9.1.0=hdf63c60_0
   - libtiff=4.1.0=h2733197_1
   - libuuid=1.0.3=h1bed415_2
@@ -72,16 +93,25 @@ dependencies:
   - libxml2=2.9.10=he19cac6_1
   - llvmlite=0.34.0=py37h5202443_1
   - lz4-c=1.9.2=he6710b0_1
+  - markupsafe=1.1.1=py37h8f50634_1
   - matplotlib=3.3.1=0
   - matplotlib-base=3.3.1=py37h817c723_0
+  - mistune=0.8.4=py37h8f50634_1001
   - mkl=2020.2=256
   - mkl-service=2.3.0=py37he904b0f_0
   - mkl_fft=1.1.0=py37h23d657b_0
   - mkl_random=1.1.1=py37h0573a6f_0
+  - mypy=0.782=py_0
+  - mypy_extensions=0.4.3=py37_0
+  - nbclient=0.5.0=py_0
+  - nbconvert=6.0.2=py37hc8dfbb8_0
+  - nbformat=5.0.7=py_0
   - ncurses=6.2=he6710b0_1
+  - nest-asyncio=1.4.0=py_0
   - nettle=3.4.1=h1bed415_1002
   - networkx=2.5=py_0
   - ninja=1.10.1=py37hfd86e86_0
+  - notebook=6.1.4=py37hc8dfbb8_0
   - numba=0.51.2=py37h9fdb41a_0
   - numpy=1.19.1=py37hbc911f0_0
   - numpy-base=1.19.1=py37hfa32c7d_0
@@ -91,16 +121,25 @@ dependencies:
   - openssl=1.1.1g=h516909a_1
   - packaging=20.4=pyh9f0ad1d_0
   - pandas=1.1.1=py37he6710b0_0
+  - pandoc=2.10.1=h516909a_0
   - pcre=8.44=he6710b0_0
+  - pexpect=4.8.0=py37hc8dfbb8_1
+  - pickleshare=0.7.5=py37hc8dfbb8_1001
   - pillow=7.2.0=py37hb39fc2d_0
   - pip=20.2.2=py37_0
   - pixman=0.38.0=h516909a_1003
   - pooch=1.2.0=py_0
+  - prometheus_client=0.8.0=pyh9f0ad1d_0
+  - prompt-toolkit=3.0.7=py_0
+  - psutil=5.7.2=py37h7b6447c_0
+  - ptyprocess=0.6.0=py_1001
   - py-opencv=3.4.2=py37hb342d67_1
   - pycparser=2.20=pyh9f0ad1d_2
+  - pygments=2.7.0=py_0
   - pyopenssl=19.1.0=py_1
   - pyparsing=2.4.7=py_0
   - pyqt=5.9.2=py37h05f1152_2
+  - pyrsistent=0.17.3=py37h8f50634_0
   - pysocks=1.7.1=py37hc8dfbb8_1
   - pysoundfile=0.10.2=py_1001
   - python=3.7.9=h7579374_0
@@ -117,17 +156,24 @@ dependencies:
   - scikit-image=0.16.2=py37h0573a6f_0
   - scikit-learn=0.23.2=py37h0573a6f_0
   - scipy=1.5.2=py37h0b6359f_0
+  - seaborn=0.10.1=py_0
+  - send2trash=1.5.0=py_0
   - setuptools=49.6.0=py37_0
   - sip=4.19.8=py37hf484d3e_0
   - six=1.15.0=py_0
   - sqlite=3.33.0=h62c20be_0
+  - testpath=0.4.4=py_0
   - threadpoolctl=2.1.0=pyh5ca1d4c_0
   - tk=8.6.10=hbc83047_0
   - toolz=0.10.0=py_0
   - torchvision=0.5.0=py37_cu101
   - tornado=6.0.4=py37h7b6447c_1
   - tqdm=4.49.0=pyh9f0ad1d_0
+  - traitlets=5.0.4=py_0
+  - typed-ast=1.4.1=py37h7b6447c_0
+  - typing_extensions=3.7.4.3=py_0
   - urllib3=1.25.10=py_0
+  - wcwidth=0.2.5=pyh9f0ad1d_1
   - wheel=0.35.1=py_0
   - x264=1!152.20180806=h14c3975_0
   - xorg-fixesproto=5.0=h14c3975_1002
@@ -142,7 +188,21 @@ dependencies:
   - xorg-xproto=7.0.31=h14c3975_1007
   - xz=5.2.5=h7b6447c_0
   - yaml=0.2.5=h7b6447c_0
+  - zeromq=4.3.2=he1b5a44_3
+  - zipp=3.1.0=py_0
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.4.5=h9ceee32_0
+  - pip:
+    - ipython-genutils==0.2.0
+    - jedi==0.17.2
+    - json5==0.9.5
+    - jupyterlab==2.2.8
+    - jupyterlab-server==1.2.0
+    - nlpaug==1.0.1
+    - pandocfilters==1.4.2
+    - parso==0.7.1
+    - pyzmq==19.0.2
+    - terminado==0.8.3
+    - webencodings==0.5.1
 prefix: /home/linhui.dai/anaconda2/envs/pytorch1.3
 
